@@ -25,7 +25,7 @@ public class Model extends Observable {
     /** Largest piece value. */
     public static final int MAX_PIECE = 2048;
 
-    /** A new 2048 game on a board of size SIZE with no pieces
+    /** A new 2048 game on a board of size b.SIZE with no pieces
      *  and score 0. */
     public Model(int size) {
         board = new Board(size);
@@ -95,7 +95,6 @@ public class Model extends Observable {
     }
 
     /** Tilt the board toward SIDE. Return true iff this changes the board.
-     *
      * 1. If two Tile objects are adjacent in the direction of motion and have
      *    the same value, they are merged into one Tile of twice the original
      *    value and that new value is added to the score instance variable
@@ -113,6 +112,13 @@ public class Model extends Observable {
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
+        if (side == Side.NORTH) {
+            int res = tiltUp(this.board);
+            if (res >= 0) {
+                changed = true;
+                this.score = res;
+            }
+        }
 
         checkGameOver();
         if (changed) {
@@ -120,6 +126,63 @@ public class Model extends Observable {
         }
         return changed;
     }
+
+    public static int tiltUp(Board b) {
+       int score = 0;
+       boolean changed = false;
+       for (int col = 0; col < b.size() - 1; col++) {
+           int res = modifyCol(b, col);
+           if (res >= 0) {
+               changed = true;
+               score += res;
+           }
+       }
+           return changed ? score : -1;
+    }
+
+    public static int modifyCol(Board b, int col) {
+        int score = 0;
+        boolean changed = false;
+        boolean merged = false;
+        for (int i = b.size() - 1; i > 0; i--) {
+            int j = i - 1;
+            while (j >= 0 && b.tile(col, j) == null)  {
+                j--;
+            }
+            if (j < 0) {
+                continue; // no more tiles below
+            }
+
+            Tile toMove = b.tile(col, j);
+            Tile cur = b.tile(col, i);
+
+            int dest;
+            if (cur != null && cur.value() == toMove.value() && !merged) { // 2 2 4
+                score += 2 * b.tile(col, i).value();
+                dest = i;
+                changed = true;
+                merged = true;
+            } else if (cur == null){ // 4 0 4
+                dest = i;
+                changed = true;
+                i = dest + 1;
+                merged = false;
+            } else { // 4 8
+                dest = i - 1;
+                if (dest != j){
+                    changed = true;
+                }
+                merged = false;
+            }
+
+            if (b.move(col, dest, toMove)) {
+                changed = true;
+            };
+        }
+
+        return changed ? Math.max(score, 0) : -1;
+    }
+
 
     /** Checks if the game is over and sets the gameOver variable
      *  appropriately.
@@ -137,7 +200,11 @@ public class Model extends Observable {
      *  Empty spaces are stored as null.
      * */
     public static boolean emptySpaceExists(Board b) {
-        // TODO: Fill in this function.
+        for (Tile v : b) {
+            if (v == null) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -148,6 +215,11 @@ public class Model extends Observable {
      */
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        for (Tile v : b) {
+            if (v != null && v.value() == MAX_PIECE) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -159,12 +231,37 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        return emptySpaceExists(b) || EqualsInAdjacent(b);
+    }
+
+    private static boolean EqualsInAdjacent(Board b) {
+        for (int i = 0; i < b.size(); i++) {
+            for (int j = 0; j < b.size(); j ++) {
+                if (i == b.size() - 1 && j == b.size() - 1) {
+                    return false;
+                } else if (i == b.size() - 1) {
+                    if (EqualsInCol(b, i, j)) return true;
+                } else if (j == b.size() - 1) {
+                    if (EqualsInRow(b, i, j)) return true;
+                } else {
+                    if (EqualsInRow(b, i ,j) || EqualsInCol(b, i, j)) return true;
+                }
+            }
+        }
         return false;
+    }
+
+    private static boolean EqualsInCol(Board b, int col, int row) {
+        return b.tile(col, row).value() == b.tile(col, row+1).value();
+    }
+
+    public static Boolean EqualsInRow(Board b, int col, int row) {
+        return b.tile(col, row).value() == b.tile(col + 1, row).value();
     }
 
 
     @Override
-     /** Returns the model as a string, used for debugging. */
+     /* Returns the model as a string, used for debugging. */
     public String toString() {
         Formatter out = new Formatter();
         out.format("%n[%n");
@@ -184,7 +281,7 @@ public class Model extends Observable {
     }
 
     @Override
-    /** Returns whether two models are equal. */
+    /* Returns whether two models are equal. */
     public boolean equals(Object o) {
         if (o == null) {
             return false;
@@ -196,7 +293,7 @@ public class Model extends Observable {
     }
 
     @Override
-    /** Returns hash code of Model’s string. */
+    /* Returns hash code of Model’s string. */
     public int hashCode() {
         return toString().hashCode();
     }
