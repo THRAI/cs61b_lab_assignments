@@ -112,16 +112,16 @@ public class Model extends Observable {
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
-        if (side == Side.NORTH) {
-            int res = tiltUp(this.board);
-            if (res >= 0) {
-                changed = true;
-                this.score = res;
-            }
+        this.board.setViewingPerspective(side);
+        int res = tiltUp(this.board);
+        if (res >= 0) {
+            changed = true;
+            this.score += res;
         }
 
         checkGameOver();
         if (changed) {
+            this.board.setViewingPerspective(Side.NORTH);
             setChanged();
         }
         return changed;
@@ -130,7 +130,7 @@ public class Model extends Observable {
     public static int tiltUp(Board b) {
        int score = 0;
        boolean changed = false;
-       for (int col = 0; col < b.size() - 1; col++) {
+       for (int col = 0; col < b.size(); col++) {
            int res = modifyCol(b, col);
            if (res >= 0) {
                changed = true;
@@ -140,17 +140,21 @@ public class Model extends Observable {
            return changed ? score : -1;
     }
 
+    /** Search from top to bottom for the next tile to merge. If a merge happens,
+     * restart from merged tile. When the search hits bottom, this column is finished.
+     * @return -1 if no changes, 0 if changed with no merges, overscore from the col otherwise.
+     */
     public static int modifyCol(Board b, int col) {
         int score = 0;
         boolean changed = false;
         boolean merged = false;
-        for (int i = b.size() - 1; i > 0; i--) {
+        for (int i = b.size() - 1; i >= 0; i--) {
             int j = i - 1;
-            while (j >= 0 && b.tile(col, j) == null)  {
+            while (j >= 0 && b.tile(col, j) == null)  { //consume blank slots
                 j--;
             }
             if (j < 0) {
-                continue; // no more tiles below
+                return changed ?score :-1; // no more tiles below
             }
 
             Tile toMove = b.tile(col, j);
@@ -162,7 +166,7 @@ public class Model extends Observable {
                 dest = i;
                 changed = true;
                 merged = true;
-            } else if (cur == null){ // 4 0 4
+            } else if (cur == null){ // Either a merge happened last time or top is empty
                 dest = i;
                 changed = true;
                 i = dest + 1;
@@ -180,7 +184,7 @@ public class Model extends Observable {
             };
         }
 
-        return changed ? Math.max(score, 0) : -1;
+        return changed ? score : -1;
     }
 
 
