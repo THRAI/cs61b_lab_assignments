@@ -13,7 +13,7 @@ public class TimeSLList {
             double time = times.get(i);
             int opCount = opCounts.get(i);
             double timePerOp = time / opCount * 1e6;
-            System.out.printf("%12d %12.2f %12d %12.2f\n", N, time, opCount, timePerOp);
+            System.out.printf("%12d %12.4f %12d %12.4f\n", N, time, opCount, timePerOp);
         }
     }
 
@@ -22,7 +22,30 @@ public class TimeSLList {
     }
 
     public static void timeGetLast() {
-        // TODO: YOUR CODE HERE
+        int[] listSizes = new int[]{1000, 2000, 4000, 8000, 16000, 32000, 64000, 128000};
+        AList<Integer> Ns = new AList<>();
+        AList<Integer> Ops = new AList<>();
+        AList<Double> times = new AList<>();
+        int opCount = 10000;
+
+        for (int x : listSizes) {
+            Ns.addLast(x);
+            Ops.addLast(opCount);
+            times.addLast(addLastNTimesRemoveLastMTimes(x,opCount));
+        }
+        printTimingTable(Ns, times, Ops);
+    }
+
+    private static double addLastNTimesRemoveLastMTimes(int n, int m) {
+        SLList<Integer> L = new SLList<>();
+        for (int i = 0; i < n; i++) {
+            L.addLast(0);
+        }
+        Stopwatch sw = new Stopwatch();
+        for (int i = 0; i < m; i++) {
+            L.getLast();
+        }
+        return sw.elapsedTime();
     }
 
 }
