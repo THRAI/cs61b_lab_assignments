@@ -1,5 +1,7 @@
 package deque;
 
+import java.util.Iterator;
+
 public class ArrayDeque<T> {
     private T[] items;
     private int capacity; /** Array capacity. Effective entries is calculated in capacity(). */
@@ -8,14 +10,14 @@ public class ArrayDeque<T> {
     private final int defaultCapacity = 8;
     private final int resizeFactor = 2;
     private final int shrinkDenominator = 2;
-    private final int maximumSpaceToUseRate = 4;
+    private final int maximumSpaceToUseRatio = 4;
 
     /** initialization: [nextLast ... nextFirst] */
     public ArrayDeque() {
         items = (T[]) new Object[defaultCapacity];
         capacity = defaultCapacity;
-        nextFirst = 0;
-        nextLast = defaultCapacity - 1;
+        nextLast = 0;
+        nextFirst = defaultCapacity - 1;
     }
 
     /** initialization: [nextLast ... nextFirst] */
@@ -23,19 +25,19 @@ public class ArrayDeque<T> {
         capacity = Math.max(capacity, defaultCapacity);
         items = (T[]) new Object[capacity];
         this.capacity = capacity;
-        nextFirst = 0;
-        nextLast = capacity - 1;
+        nextLast = 0;
+        nextFirst = capacity - 1;
     }
 
     /** Resize policy: [1st 2nd ... nextLast ... nextFirst].
      *  Updates nextLast, nextFirst, items, and capacity.
      * @param newSize New capacity of the array
      */
-    private void resizeArray(int newSize) {
+    private void resize(int newSize) {
         T[] newArray = (T[]) new Object[newSize];
 
         int j = 0;
-        for (int i = (nextFirst + 1) % capacity; i != nextLast; i = (i + 1) % capacity) {
+        for (int i = oneAfter(nextFirst); i != nextLast; i = oneAfter(i)) {
             newArray[j++] = items[i];
         }
 
@@ -48,36 +50,36 @@ public class ArrayDeque<T> {
     /** Grows backward. [nextLast ... nextFirst F2 F1]*/
     public void addFirst(T elem) {
         if (nextFirst == nextLast) {
-            resizeArray(capacity * resizeFactor);
+            resize(capacity * resizeFactor);
         }
         items[nextFirst] = elem;
-        nextFirst = (nextFirst - 1 + capacity) % capacity;
+        nextFirst = oneBefore(nextFirst);
     }
 
     /** Grows forward. [L1 L2 nextLast ... nextFirst]*/
     public void addLast(T elem) {
         if (nextLast == nextFirst) {
-            resizeArray(capacity * resizeFactor);
+            resize(capacity * resizeFactor);
         }
         items[nextLast] = elem;
-        nextLast = (nextLast + 1) % capacity;
+        nextLast = oneAfter(nextLast);
     }
 
     public boolean isEmpty() {
-        return (nextFirst + 1) % capacity == nextLast;
+        return oneAfter(nextFirst) == nextLast;
     }
 
+    /** nextLast = (nextFirst + 1) % cap + size() */
     public int size() {
-        return (nextLast - nextFirst + capacity - 1) % capacity;
+        return (nextLast - nextFirst - 1 + capacity) % capacity;
     }
 
-    public int capacity() {
-        return capacity;
-    }
+    /** Encapsulated index arithmetic, handles wrap around. */
+    private int oneBefore(int index) { return (index - 1 + capacity) % capacity; }
+    private int oneAfter(int index) { return (index + 1) % capacity; }
 
-    /** print insertFirst queue first, then insertLast queue. */
     public void printDeque() {
-        for (int i = (nextFirst + 1) % capacity; i != nextLast; i = (i + 1) % capacity) {
+        for (int i = oneAfter(nextFirst); i != nextLast; i = oneAfter(i)) {
             System.out.print(items[i].toString() + " ");
         }
         System.out.print("\n");
@@ -87,12 +89,13 @@ public class ArrayDeque<T> {
     public T removeFirst() {
         if (isEmpty()) {
             return null;
-        } else if (size() > defaultCapacity && size() * maximumSpaceToUseRate <= capacity) {
-            resizeArray(capacity / shrinkDenominator);
+        } else if (size() > defaultCapacity && size() * maximumSpaceToUseRatio <= capacity) {
+            resize(capacity / shrinkDenominator);
         }
 
-        T returnVal = items[(nextFirst + 1) % capacity];
-        items[(nextFirst + 1) % capacity] = null;
+        T returnVal = items[oneAfter(nextFirst)];
+        items[oneAfter(nextFirst)] = null;
+        nextFirst = oneAfter(nextFirst);
         return returnVal;
     }
 
@@ -100,12 +103,13 @@ public class ArrayDeque<T> {
     public T removeLast() {
         if (isEmpty()) {
             return null;
-        } else if (size() > defaultCapacity && size() * maximumSpaceToUseRate <= capacity) {
-            resizeArray(capacity / shrinkDenominator);
+        } else if (size() > defaultCapacity && size() * maximumSpaceToUseRatio <= capacity) {
+            resize(capacity / shrinkDenominator);
         }
 
-        T returnVal = items[(nextLast - 1 + capacity) % capacity];
-        items[(nextLast - 1 + capacity) % capacity] = null;
+        T returnVal = items[oneBefore(nextLast)];
+        items[oneBefore(nextLast)] = null;
+        nextLast = oneBefore(nextLast);
         return returnVal;
     }
 
@@ -113,8 +117,57 @@ public class ArrayDeque<T> {
         if (index >= size() || index < 0) {
             return null;
         }
-        int realIndex = (nextFirst + 1 + index) % capacity;
+        int realIndex = oneAfter(nextFirst) + index;
         return items[realIndex];
     }
 
+    public T getLast() {
+        return items[oneBefore(nextLast)];
+    }
+
+    public T getFirst() {
+        return items[oneAfter(nextFirst)];
+    }
+
+    public Iterator<T> iterator() {
+        return new ArrayDequeIterator();
+    }
+
+    private class ArrayDequeIterator implements Iterator<T>{
+        private int it;
+
+        public ArrayDequeIterator() {
+            it = oneAfter(nextFirst);
+        }
+
+        public boolean hasNext() {
+            return oneAfter(it) == nextLast;
+        }
+
+        public T next() {
+            T val = items[it];
+            it = oneAfter(it);
+            return val;
+        }
+    }
+
+    public boolean equals(Object o) {
+        if (!(o instanceof ArrayDeque)) {
+            return false;
+        }
+        if (((ArrayDeque<?>) o).size() != size()) {
+            return false;
+        }
+
+        int index = oneAfter(nextFirst);
+        int indexO = oneAfter(((ArrayDeque<?>) o).nextFirst);
+        while (index != nextLast) {
+            if (((ArrayDeque<T>) o).items[indexO] != items[index]) {
+                return false;
+            }
+            index = oneAfter(index);
+            indexO = oneAfter(indexO);
+        }
+        return true;
+    }
 }

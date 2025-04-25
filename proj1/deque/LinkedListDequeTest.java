@@ -1,5 +1,6 @@
 package deque;
 
+import edu.princeton.cs.algs4.StdRandom;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -116,6 +117,69 @@ public class LinkedListDequeTest {
 
         for (double i = 999999; i > 500000; i--) {
             assertEquals("Should have the same value", i, (double) lld1.removeLast(), 0.0);
+        }
+    }
+
+    @Test
+    public void randomizedTest() {
+        java.util.Deque<Integer> L = new java.util.ArrayDeque<>();
+        LinkedListDeque<Integer> B = new LinkedListDeque<>();
+
+        int N = 500000;
+        for (int i = 0; i < N; i += 1) {
+            int operationNumber = StdRandom.uniform(0, 6);
+            switch (operationNumber) {
+                case 0:
+                    // addLast
+                    int randVal = StdRandom.uniform(0, 100);
+                    L.addLast(randVal);
+                    B.addLast(randVal);
+                    assertEquals(L.getLast(), B.getLast());
+                    System.out.println("addLast(" + randVal + ")");
+                    break;
+                case 1:
+                    // size
+                    int sizeL = L.size();
+                    int sizeB = B.size();
+                    assertEquals(sizeB, sizeL);
+                    System.out.println("size: " + sizeL);
+                    break;
+                case 2:
+                    // getLast
+                    if (!L.isEmpty()) {
+                        int lastL = L.getLast();
+                        int lastB = B.getLast();
+                        assertEquals(lastL, lastB);
+                        System.out.println("getLast: " + lastL);
+                    }
+                    break;
+                case 3:
+                    // removeLast
+                    if (!L.isEmpty()) {
+                        int lastL = L.removeLast();
+                        int lastB = B.removeLast();
+                        assertEquals(lastL, lastB);
+                        System.out.println("removeLast: " + lastL);
+                    }
+                    break;
+                case 4:
+                    // addFirst
+                    int randomVal = StdRandom.uniform(0, 100);
+                    L.addFirst(randomVal);
+                    B.addFirst(randomVal);
+                    assertEquals(L.getFirst(), B.getFirst());
+                    System.out.println("addFirst(" + randomVal + ")");
+                    break;
+                case 5:
+                    // removeFirst
+                    if (!L.isEmpty()) {
+                        int firstL = L.removeFirst();
+                        int firstB = B.removeFirst();
+                        assertEquals(firstB, firstL);
+                        System.out.println("removeLast: " + firstL);
+                    }
+                    break;
+            }
         }
     }
 }

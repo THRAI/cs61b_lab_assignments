@@ -92,6 +92,9 @@ public class LinkedListDeque<T> {
         return cur.item;
     }
 
+    public T getLast() { return sentinel.prev.item; }
+    public T getFirst() { return sentinel.next.item; }
+
     public T getRecursive(int index) {
       if (index >= size || index < 0) {
           return null;
