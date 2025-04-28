@@ -1,8 +1,7 @@
 package deque;
-
 import java.util.Iterator;
 
-public class ArrayDeque<T> {
+public class ArrayDeque<T> implements Deque<T> {
     private T[] items;
     private int capacity; /** Array capacity. Effective entries is calculated in capacity(). */
     private int nextFirst; /** equals -1 index of effective data queue. */
@@ -65,9 +64,9 @@ public class ArrayDeque<T> {
         nextLast = oneAfter(nextLast);
     }
 
-    public boolean isEmpty() {
-        return oneAfter(nextFirst) == nextLast;
-    }
+//    public boolean isEmpty() {
+//        return oneAfter(nextFirst) == nextLast;
+//    }
 
     /** nextLast = (nextFirst + 1) % cap + size() */
     public int size() {
